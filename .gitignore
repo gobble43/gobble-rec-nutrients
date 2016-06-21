@@ -1,0 +1,6 @@
+# FILESYSTEM
+.DS_Store
+
+# DEV
+._*
+node_modules/
