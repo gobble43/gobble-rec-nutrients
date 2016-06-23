@@ -1,3 +1,10 @@
 {
-  "extends":"airbnb"
+  "env": {
+    "node": true
+  },
+  "extends": "airbnb",
+  rules: {
+    "no-console": 0,  
+    "no-undef": 0
+  }
 }

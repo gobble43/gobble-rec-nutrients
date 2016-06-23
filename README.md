@@ -3,7 +3,16 @@
 [![Stories in Ready](https://badge.waffle.io/gobble43/gobble-rec-nutrients.png?label=ready&title=Ready)](https://waffle.io/gobble43/gobble-rec-nutrients)
 
 # Gobble-rec-nutrients
-Gobble-rec-nutrients is a microservice which takes a request with product barcode (UPC) or specific nutrient and sends back an analysis regarding product specific nutrients level and average nutrient level of product category, along with a variety of recommendations including, but not limited to, a similar product which has better nutrients than the input product, other product lines the brand of the input product can offer and a product with the highest percentage of the input nutrient. 
+Gobble-rec-nutrients is a microservice, which accepts a request with
+- product barcode (UPC) or
+- specific nutrient 
+and sends back an analysis of
+- product specific nutrients level 
+- average nutrients level of product category
+and a variety of recommendations including
+- a similar product with better nutrients
+- other product lines the same brand can offer 
+- a product with the highest percentage of the input nutrient 
 
 ## Table of Contents
 1. [Getting started](#getting-started)

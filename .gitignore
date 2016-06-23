@@ -4,3 +4,5 @@
 # DEV
 ._*
 node_modules/
+env/development.env
+env/production.env
