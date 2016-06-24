@@ -3,6 +3,8 @@ node_js:
   - 6.2.2
 services:
   - redis-server
+before_install:
+  - redis-cli "hset 1 test success"
 script:
   - npm run lint
   - NODE_ENV=test node server/master.js & npm test

@@ -12,8 +12,12 @@ const startCategoryWorker = () => {
           client.rpopAsync('getCategories')
             .then((taskString) => {
               console.log('categoryWorker working on: ', taskString);
-              // const task = JSON.parse(taskString);
-              // request all the categories from master DB with task.UPC
+              const task = JSON.parse(taskString);
+              // TODO: request all the categories from master DB with task.UPC
+              return JSON.stringify({
+                UPC: task.UPC,
+                categories: ['exampleCategory1', 'exampleCategory2'],
+              });
             })
             .then((categories) => {
               console.log('sending categories to master :', categories);

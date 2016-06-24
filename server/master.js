@@ -48,9 +48,10 @@ const checkProductWorker = () => {
     });
     workers.productWorker.on('message', (productInfo) => {
       console.log('master recieved productInfo from product worker', productInfo);
+      const parsedProductInfo = JSON.parse(productInfo);
       client.hmset(
-        productInfo.UPC, 'brand', productInfo.brand, 'nutrients',
-        JSON.stringify(productInfo.nutrients)
+        parsedProductInfo.UPC, 'brand', parsedProductInfo.brand, 'nutrients',
+        JSON.stringify(parsedProductInfo.nutrients)
       );
     });
   }
@@ -69,9 +70,10 @@ const checkCategoryWorker = () => {
     });
     workers.categoryWorker.on('message', (categories) => {
       console.log('master recieved categories from category worker', categories);
-      categories.categories.forEach((category) => {
-        client.hset(categories.UPC, category, 'waitingForData');
-        data = { UPC: categories.UPC, category };
+      const parsedCategories = JSON.parse(categories);
+      parsedCategories.categories.forEach((category) => {
+        client.hset(parsedCategories.UPC, category, 'waitingForData');
+        data = { UPC: parsedCategories.UPC, category };
         client.lpush('getCategoryNutrients', JSON.stringify(data));
       });
     });
@@ -93,7 +95,11 @@ const checkCategoryNutrientsWorker = () => {
       console.log(
         'master recieved categoryNutrients from categoryNutrients worker', categoryNutrients
       );
-      client.hset(categoryNutrients.UPC, categoryNutrients.category, categoryNutrients.nutrients);
+      const parsedCategoryNutrients = JSON.parse(categoryNutrients);
+      client.hset(
+        parsedCategoryNutrients.UPC, parsedCategoryNutrients.category,
+        JSON.stringify(parsedCategoryNutrients.nutrients)
+      );
     });
   }
 };

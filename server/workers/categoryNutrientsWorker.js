@@ -12,8 +12,12 @@ const startCategoryNutrientsWorker = () => {
           client.rpopAsync('getCategoryNutrients')
             .then((taskString) => {
               console.log('categoryNutrientsWorker working on: ', taskString);
-              // const task = JSON.parse(taskString);
-              // request nutrients from master DB with task.category
+              const task = JSON.parse(taskString);
+              // TODO: request nutrients from master DB with task.category
+              return JSON.stringify({
+                UPC: task.UPC, category: task.category,
+                nutrients: { exampleNutrient1: 100, exampleNutrient2: 200 },
+              });
             })
             .then((categoryNutrients) => {
               console.log('sending categoryNutrients to master :', categoryNutrients);
