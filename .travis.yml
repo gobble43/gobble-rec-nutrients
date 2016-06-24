@@ -8,5 +8,5 @@ before_install:
 script:
   - npm run lint
   - NODE_ENV=test node server/master.js
-  - sleep 10
+  - sleep 5
   - npm test
