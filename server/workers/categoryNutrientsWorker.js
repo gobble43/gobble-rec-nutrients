@@ -16,7 +16,7 @@ const startCategoryNutrientsWorker = () => {
               // TODO: request nutrients from master DB with task.category
               return JSON.stringify({
                 UPC: task.UPC, category: task.category,
-                nutrients: { exampleNutrient1: 100, exampleNutrient2: 200 },
+                nutrients: { exampleBadNutrient1: 100, exampleGoodNutrient: 200 },
               });
             })
             .then((categoryNutrients) => {

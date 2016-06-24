@@ -16,7 +16,7 @@ const startProductWorker = () => {
               // TODO: request brand, nutrients from master DB with task.UPC
               return JSON.stringify({
                 UPC: task.UPC, brand: 'exampleBrand',
-                nutrients: { exampleNutrient1: 100, exampleNutrient2: 200 },
+                nutrients: { exampleBadNutrient: 200, exampleGoodNutrient: 100 },
               });
             })
             .then((productInfo) => {
