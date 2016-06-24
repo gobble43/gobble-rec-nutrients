@@ -5,7 +5,7 @@ services:
   - redis-server
 before_install:
   - redis-cli "hset 1 test success"
-  - NODE_ENV=test node server/master.js
 script:
   - npm run lint
+  - NODE_ENV=test node server/master.js
   - npm test
