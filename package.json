@@ -1,21 +1,22 @@
 {
   "name": "gobble-rec-nutrients",
   "version": "1.0.0",
-  "description": "",
+  "description": "Gobble's recommendation engine to analyze nutrients and make recommendations",
   "main": "index.js",
   "scripts": {
-    "start": "NODE_ENV=development ./node_modules/.bin/nodemon ./server/server.js",
+    "start": "NODE_ENV=development ./node_modules/.bin/nodemon ./server/master.js",
     "test": "./node_modules/.bin/mocha --reporter spec ./test/*-spec.js",
     "lint": "./node_modules/.bin/eslint ./"
   },
   "keywords": [],
-  "author": "",
+  "author": "jinsoocha",
   "license": "ISC",
   "dependencies": {
     "bluebird": "^3.4.1",
     "dotenv": "^2.0.0",
     "express": "^4.14.0",
     "morgan": "^1.7.0",
+    "redis": "^2.6.2",
     "mysql": "^2.11.1"
   },
   "devDependencies": {

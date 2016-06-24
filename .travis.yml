@@ -2,7 +2,7 @@ language: node_js
 node_js:
   - 6.2.2
 services:
-  - mysql
+  - redis-server
 script:
   - npm run lint
-  - NODE_ENV=test node server/server.js & npm test
+  - NODE_ENV=test node server/master.js & npm test
