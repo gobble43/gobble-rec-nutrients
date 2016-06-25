@@ -10,13 +10,11 @@ const startCategoryWorker = () => {
           setTimeout(loopCategoryWorker, 1000);
         } else {
           client.rpopAsync('getCategories')
-            .then((taskString) => {
-              console.log('categoryWorker working on: ', taskString);
-              const task = JSON.parse(taskString);
+            .then((UPC) => {
+              console.log('categoryWorker working on: ', UPC);
               // TODO: request all the categories from master DB with task.UPC
               return JSON.stringify({
-                UPC: task.UPC,
-                categories: ['exampleCategory1', 'exampleCategory2'],
+                UPC, categories: ['exampleCategory1', 'exampleCategory2'],
               });
             })
             .then((categories) => {

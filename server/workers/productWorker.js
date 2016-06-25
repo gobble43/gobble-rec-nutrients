@@ -10,13 +10,11 @@ const startProductWorker = () => {
           setTimeout(loopProductWorker, 1000);
         } else {
           client.rpopAsync('getProductInfo')
-            .then((taskString) => {
-              console.log('productWorker working on: ', taskString);
-              const task = JSON.parse(taskString);
-              // TODO: request brand, nutrients from master DB with task.UPC
+            .then((UPC) => {
+              console.log('productWorker working on: ', UPC);
+              // TODO: request name, brand, nutrients from master DB with task.UPC
               return JSON.stringify({
-                UPC: task.UPC, brand: 'exampleBrand',
-                nutrients: { exampleBadNutrient: 200, exampleGoodNutrient: 100 },
+                UPC, name: 'exampleName', brand: 'exampleBrand', sodium: 200, calcium: 100,
               });
             })
             .then((productInfo) => {

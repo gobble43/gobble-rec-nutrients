@@ -22,14 +22,9 @@ const checkHTTPServer = () => {
         console.log('bad task');
         return;
       }
-      if (message.task === 'addNewProductRecommendation') {
-        client.hmset(
-          message.UPC, 'brand', 'waitingForData', 'nutrients', 'waitingForData',
-          'recommendedProduct', 'waitingForData', 'recommendedProductNutrients', 'waitingForData'
-        );
-        client.lpush('addNewProductRecommendation', JSON.stringify(message));
-        client.lpush('getProductInfo', JSON.stringify(message));
-        client.lpush('getCategories', JSON.stringify(message));
+      if (message.task === 'addNewProduct') {
+        client.lpush('addNewProduct', message.UPC);
+        client.lpush('getProductInfo', message.UPC);
       }
     });
   }
@@ -49,10 +44,12 @@ const checkProductWorker = () => {
     workers.productWorker.on('message', (productInfo) => {
       console.log('master recieved productInfo from product worker', productInfo);
       const parsedProductInfo = JSON.parse(productInfo);
+      // 1. create a product table with productInfo
       client.hmset(
-        parsedProductInfo.UPC, 'brand', parsedProductInfo.brand, 'nutrients',
-        JSON.stringify(parsedProductInfo.nutrients)
+        `product:${parsedProductInfo.UPC}`,
+        'productInfo', productInfo
       );
+      client.lpush('getCategories', parsedProductInfo.UPC);
     });
   }
 };
@@ -72,34 +69,51 @@ const checkCategoryWorker = () => {
       console.log('master recieved categories from category worker', categories);
       const parsedCategories = JSON.parse(categories);
       parsedCategories.categories.forEach((category) => {
-        client.hset(parsedCategories.UPC, category, 'waitingForData');
-        data = { UPC: parsedCategories.UPC, category };
-        client.lpush('getCategoryNutrients', JSON.stringify(data));
+        client.hgetAsync(`product:${parsedCategories.UPC}`, 'productInfo')
+        .then((productInfo) => {
+          const parsedProductInfo = JSON.parse(productInfo);
+          Object.keys(parsedProductInfo).forEach((key) => {
+            if (key !== 'UPC' && key !== 'brand' && key !== 'name') {
+              if (Number(parsedProductInfo[key]) < 1000) {
+                modifiedNutrientLevel = `0${parsedProductInfo[key].toString()}`;
+              }
+              // 2. create a product nutrients rank table sorted by category
+              // zadd rankByCategory:calcium 0 milk:0100:129428359
+              // zrangebylex calcium [milk:0 [milk:9999
+              client.zadd(
+                `rankByCategory:${key}`, 0,
+                `${category}:${modifiedNutrientLevel}:${parsedCategories.UPC}`
+              );
+              // 3. create a product nutrients rank table sorted by nutrients level
+              // zadd rankByLevel:calcium 0100 milk:129428359
+              // zrangebyscore -inf +inf
+              client.zadd(`rankByLevel:${key}`,
+                modifiedNutrientLevel, `${category}:${parsedCategories.UPC}`
+              );
+              // 4. create a category table with average nutrients level for each category
+              client.hmgetAsync(`category:${category}`, key, `${key}Products`)
+              .then((categoryInfo) => {
+                console.log('categoryInfo: ', categoryInfo);
+                nutrientLevel = categoryInfo[0];
+                numberOfProducts = categoryInfo[1];
+                if (nutrientLevel) {
+                  const newNumberOfProducts = numberOfProducts + 1;
+                  const newNutrientLevel =
+                  (nutrientLevel + parsedProductInfo[key]) / newNumberOfProducts;
+                  client.hmset(
+                    `category:${category}`, key, newNutrientLevel,
+                    `${key}Products`, newNumberOfProducts
+                  );
+                } else {
+                  client.hmset(
+                    `category:${category}`, key, parsedProductInfo[key], `${key}Products`, 1
+                  );
+                }
+              });
+            }
+          });
+        });
       });
-    });
-  }
-};
-
-const checkCategoryNutrientsWorker = () => {
-  if (workers.categoryNutrientsWorker === undefined) {
-    console.log('master created a categoryNutrients worker');
-    workers.categoryNutrientsWorker = cluster.fork({ ROLE: 'categoryNutrients worker' });
-    workers.categoryNutrientsWorker.on('online', () => {
-      console.log('categoryNutrients worker online');
-    });
-    workers.categoryNutrientsWorker.on('exit', () => {
-      console.log('categoryNutrients worker exited');
-      delete workers.categoryNutrientsWorker;
-    });
-    workers.categoryNutrientsWorker.on('message', (categoryNutrients) => {
-      console.log(
-        'master recieved categoryNutrients from categoryNutrients worker', categoryNutrients
-      );
-      const parsedCategoryNutrients = JSON.parse(categoryNutrients);
-      client.hset(
-        parsedCategoryNutrients.UPC, parsedCategoryNutrients.category,
-        JSON.stringify(parsedCategoryNutrients.nutrients)
-      );
     });
   }
 };
@@ -114,7 +128,6 @@ const startMaster = () => {
       checkHTTPServer();
       checkProductWorker();
       checkCategoryWorker();
-      checkCategoryNutrientsWorker();
     };
 
     loopWorkers();
@@ -130,7 +143,4 @@ if (cluster.isMaster) {
   require('./workers/productWorker.js');
 } else if (process.env.ROLE === 'category worker') {
   require('./workers/categoryWorker.js');
-} else if (process.env.ROLE === 'categoryNutrients worker') {
-  require('./workers/categoryNutrientsWorker.js');
 }
-
