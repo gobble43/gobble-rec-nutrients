@@ -15,8 +15,6 @@ const startMatrixWorker = () => {
               helper.getProductInfo(UPC)
               .then((info) => {
                 const ProductInfo = JSON.parse(info);
-                // delete the product information in redis
-                // helper.removeProductInfo(UPC);
                 Object.keys(ProductInfo).forEach((key, i) => {
                   if (key !== 'UPC' && key !== 'brand' && key !== 'name') {
                     const nutrientLevel = helper.adjustNumber(ProductInfo[key]);

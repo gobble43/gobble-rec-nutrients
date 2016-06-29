@@ -35,13 +35,13 @@ const sortProductByCategory = (key, category, nutrientLevel, UPC) =>
 
 const getProductWithHigherNutrientLevel = (categoryField, category, nutrientLevel) =>
   client.zrangebylexAsync(
-    `rankByCategory:${categoryField}`,
+    `sortByCategory:${categoryField}`,
     `[${category}:${nutrientLevel}`, `[${category}:9999`
   );
 
 const getProductWithLowerNutrientLevel = (categoryField, category, nutrientLevel) =>
   client.zrangebylexAsync(
-    `rankByCategory:${categoryField}`,
+    `sortByCategory:${categoryField}`,
     `[${category}:0000`, `[${category}:${nutrientLevel}`
   );
 
@@ -59,6 +59,15 @@ const getAverageCategoryNutrientLevel = (category, key) =>
 const getAllCategoryNutrientLevel = (category) =>
   client.hgetallAsync(`category:${category}`);
 
+const storeRecommendation = (UPC, JSONObject) =>
+  client.hset('recommendation', UPC, JSONObject);
+
+const getRecommendation = (UPC) =>
+  client.hgetAsync('recommendation', UPC);
+
+const removeRecommendations = () =>
+  client.del('recommendation');
+
 module.exports = {
   addToQueue,
   checkQueue,
@@ -74,4 +83,7 @@ module.exports = {
   setAverageCategoryNutrientLevel,
   getAverageCategoryNutrientLevel,
   getAllCategoryNutrientLevel,
+  storeRecommendation,
+  getRecommendation,
+  removeRecommendations,
 };
