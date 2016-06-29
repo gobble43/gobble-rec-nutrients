@@ -1,32 +1,33 @@
-const Promise = require('bluebird');
-const redis = Promise.promisifyAll(require('redis'));
-const client = redis.createClient();
+const helper = require('../util/helpers.js');
 
 const startCategoryWorker = () => {
   const loopCategoryWorker = () => {
-    client.llenAsync('getCategories')
+    helper.checkQueue('getCategories')
       .then((length) => {
         if (length === 0) {
           setTimeout(loopCategoryWorker, 1000);
         } else {
-          client.rpopAsync('getCategories')
+          helper.removeQueue('getCategories')
             .then((UPC) => {
               console.log('categoryWorker working on: ', UPC);
               // TODO: request all the categories from master DB with task.UPC
               return JSON.stringify({
-                UPC, categories: ['exampleCategory1', 'exampleCategory2'],
+                UPC, categories: ['dairy', 'yogurt'],
               });
             })
-            .then((categories) => {
-              console.log('sending categories to master :', categories);
+            .then((categoryData) => {
+              console.log('sending categoryData to master :', categoryData);
               // send back UPC with categories
-              process.send(categories);
+              process.send(categoryData);
               loopCategoryWorker();
             })
             .catch((err) => {
               console.err(err);
             });
         }
+      })
+      .catch((err) => {
+        console.log(err);
       });
   };
   loopCategoryWorker();

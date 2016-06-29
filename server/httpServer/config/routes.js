@@ -1,26 +1,13 @@
-const Promise = require('bluebird');
-const redis = Promise.promisifyAll(require('redis'));
-const client = redis.createClient();
+const recommendationWorker = require('../../workers/recommendationWorker.js');
 
 module.exports = (app) => {
   app.get('/', (req, res) => {
     res.end('Hello World!');
   });
-  app.post('/api/tasks', (req, res) => {
-    console.log('httpServer recieved a task: ', req.body);
-    // check cached table
-    client.hgetallAsync(req.body.UPC)
-    .then((data) => {
-      if (data) {
-        console.log('data from redis cached table: ', data);
-        res.status(200).end(JSON.stringify(data));
-      } else {
-        process.send(req.body);
-        res.status(200).end();
-      }
-    })
-    .catch((err) => {
-      res.status(500).end(err);
+  app.post('/api/getRecommendation', (req, res) => {
+    console.log('httpServer recieved a task, getRecommendation: ', req.body);
+    recommendationWorker.getRecommendation(req.body.UPC, (data) => {
+      res.status(201).end(typeof data);
     });
   });
 };
