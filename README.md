@@ -4,14 +4,18 @@
 
 # Gobble-rec-nutrients
 Gobble-rec-nutrients is a microservice, which accepts a request with
+
 - product barcode (UPC) or
 - specific nutrient 
+
 and sends back an analysis of
+
 - product specific nutrients level 
 - average nutrients level of product category
+
 and a variety of recommendations including
+
 - a similar product with better nutrients
-- other product lines the same brand can offer 
 - a product with the highest percentage of the input nutrient 
 
 ## Table of Contents
