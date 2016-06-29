@@ -10,13 +10,17 @@ const checkMasterDB = () => {
   //   method: 'get',
   // }).then((res) => {
   //   console.log('===RES', res);
-  //   // loop through the res.body (array)
+  //   if (res.body.length > 0) {
+  //     // delete cached recommendation
+  //     helper.removeRecommendations();
+  //     // loop through the res.body (array)
   //     res.body.forEach((product) => {
   //       // store the information
   //       helper.storeProductInfo(product.UPC, product);
   //       // send each UPC to getCategories queue
   //       helper.addToQueue('getCategories', product.UPC);
-  //     })
+  //     });
+  //   }
   // }).catch((err) => {
   //   console.log('Error retreiving data from Gobble Master DB: ', err);
   // });
