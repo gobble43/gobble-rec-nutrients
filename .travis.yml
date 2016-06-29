@@ -6,7 +6,5 @@ services:
 before_script:
   - npm run lint
 script:
-  - NODE_ENV=test node server/master.js
-after_script:
-  - NODE_ENV=test npm test
+  - NODE_ENV=test node server/master.js & sleep 2 & NODE_ENV=test npm test
 

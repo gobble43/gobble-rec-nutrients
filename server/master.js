@@ -100,7 +100,7 @@ const startMaster = () => {
     loopWorkers();
     setInterval(loopWorkers, 2000);
     checkMasterDB();
-    setInterval(checkMasterDB, 60000);
+    setInterval(checkMasterDB, 360000);
   });
 };
 
