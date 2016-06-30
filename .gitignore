@@ -1,0 +1,9 @@
+# FILESYSTEM
+.DS_Store
+
+# DEV
+._*
+node_modules/
+env/development.env
+env/production.env
+dump.rdb
