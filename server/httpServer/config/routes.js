@@ -14,9 +14,14 @@ module.exports = (app) => {
         console.log('cached recommendation', JSON.parse(cache));
         res.status(201).send(typeof JSON.parse(cache));
       } else {
-        recommendationWorker.getRecommendation(1, (data) => {
-          console.log('recommendation produced', data);
-          res.status(201).send(typeof data);
+        recommendationWorker.getRecommendation(1, (err, data) => {
+          if (err) {
+            console.log('recommendation is not ready yet: ', err);
+            res.status(404).send(`Recommendation is not ready yet: ${err}`);
+          } else {
+            console.log('recommendation produced', data);
+            res.status(201).send(typeof data);
+          }
         });
       }
     });

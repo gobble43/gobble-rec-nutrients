@@ -1,6 +1,7 @@
 const helper = require('../util/helpers.js');
 
 const getRecommendation = (UPC, callback) => {
+  let sentError = false;
   console.log('recommendation worker working on: ', UPC);
   const recommendation = {};
   // TODO: request product info from Master DB
@@ -85,7 +86,7 @@ const getRecommendation = (UPC, callback) => {
                 // store and send the recommendation object
                 console.log('Storing recommendation: ', recommendation);
                 helper.storeRecommendation(UPC, JSON.stringify(recommendation));
-                callback(recommendation);
+                callback(null, recommendation);
               }
               // });
             }
@@ -94,7 +95,10 @@ const getRecommendation = (UPC, callback) => {
       });
     })
     .catch((err) => {
-      console.log(err);
+      if (!sentError) {
+        sentError = true;
+        callback(err);
+      }
     });
   });
 };
