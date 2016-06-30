@@ -5,6 +5,4 @@ services:
   - redis-server
 before_script:
   - npm run lint
-script:
-  - NODE_ENV=test node server/master.js & sleep 10 & NODE_ENV=test npm test
-
+  - NODE_ENV=test node server/master.js

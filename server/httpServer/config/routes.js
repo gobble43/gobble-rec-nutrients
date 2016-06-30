@@ -6,7 +6,7 @@ module.exports = (app) => {
     res.end('Hello World!');
   });
   app.post('/api/getRecommendation', (req, res) => {
-    console.log('httpServer recieved a task, getRecommendation: ', req.body);
+    console.log('httpServer recieved a task, getRecommendation: ', req.body.upc);
     // TODO: modify the first parameter once the master DB endpoint is established
     helper.getRecommendation(1)
     .then((cache) => {

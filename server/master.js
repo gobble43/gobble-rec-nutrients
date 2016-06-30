@@ -26,14 +26,14 @@ const checkMasterDB = () => {
   // });
   console.log('retreiving products info from Master DB every minute for testing purpose');
   // store the product info temporarily to create matrix
-  // helper.storeProductInfo(1, {
-  //   UPC: 1,
-  //   name: 'chobani',
-  //   brand: 'meiji',
-  //   sodium: 200,
-  //   calcium: 100,
-  // });
-  // helper.addToQueue('getCategories', 1);
+  helper.storeProductInfo(1, {
+    UPC: 1,
+    name: 'chobani',
+    brand: 'meiji',
+    sodium: 200,
+    calcium: 100,
+  });
+  helper.addToQueue('getCategories', 1);
 };
 
 const checkHTTPServer = () => {
