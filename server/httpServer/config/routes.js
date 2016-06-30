@@ -16,6 +16,8 @@ module.exports = (app) => {
       } else {
         recommendationWorker.getRecommendation(1, (err, data) => {
           if (err) {
+            // Do not show this message to the user
+            // if recommendation is not ready, just show the product info from master DB only
             console.log('recommendation is not ready yet: ', err);
             res.status(404).send(`Recommendation is not ready yet: ${err}`);
           } else {
