@@ -2,18 +2,18 @@ const Promise = require('bluebird');
 const redis = Promise.promisifyAll(require('redis'));
 const client = redis.createClient();
 
-const addToQueue = (task, UPC) => client.lpush(task, UPC);
+const addToQueue = (task, UPC) => client.lpushAsync(task, UPC);
 
 const checkQueue = (task) => client.llenAsync(task);
 
 const removeQueue = (task) => client.rpopAsync(task);
 
 const storeProductInfo = (UPC, info) =>
-  client.hmset(`product:${UPC}`, 'productInfo', JSON.stringify(info));
+  client.hmsetAsync(`product:${UPC}`, 'productInfo', JSON.stringify(info));
 
 const getProductInfo = (UPC) => client.hgetAsync(`product:${UPC}`, 'productInfo');
 
-const removeProductInfo = (UPC) => client.del(`product:${UPC}`);
+const removeProductInfo = (UPC) => client.delAsync(`product:${UPC}`);
 
 const adjustNumber = (num) => {
   const digits = num.toString().split('.')[0];
@@ -31,25 +31,27 @@ const adjustNumber = (num) => {
 };
 
 const sortProductByCategory = (key, category, nutrientLevel, UPC) =>
-  client.zadd(`sortByCategory:${key}`, 0, `${category}:${nutrientLevel}:${UPC}`);
+  client.zaddAsync(`sortByCategory:${key}`, 0, `${category}:${nutrientLevel}:${UPC}`);
 
-const getProductWithHigherNutrientLevel = (categoryField, category, nutrientLevel) =>
-  client.zrangebylexAsync(
-    `sortByCategory:${categoryField}`,
-    `[${category}:${nutrientLevel}`, `[${category}:9999`
-  );
-
-const getProductWithLowerNutrientLevel = (categoryField, category, nutrientLevel) =>
-  client.zrangebylexAsync(
-    `sortByCategory:${categoryField}`,
-    `[${category}:0000`, `[${category}:${nutrientLevel}`
-  );
+const getProductWithBetterNutrients = (quality, categoryField, category, nutrientLevel) => {
+  if (quality === 'Good') {
+    client.zrangebylexAsync(
+      `sortByCategory:${categoryField}`,
+      `[${category}:${nutrientLevel}`, `[${category}:9999`
+    );
+  } else {
+    client.zrangebylexAsync(
+      `sortByCategory:${categoryField}`,
+      `[${category}:0000`, `[${category}:${nutrientLevel}`
+    );
+  }
+};
 
 const sortProductByNutrientLevel = (key, nutrientLevel, category, UPC) =>
-  client.zadd(`sortByLevel:${key}`, nutrientLevel, `${category}:${UPC}`);
+  client.zaddAsync(`sortByLevel:${key}`, nutrientLevel, `${category}:${UPC}`);
 
 const setAverageCategoryNutrientLevel = (category, key, nutrientLevel, numberOfProducts) =>
-  client.hmset(
+  client.hmsetAsync(
     `category:${category}`, key, nutrientLevel, `${key}Products`, numberOfProducts
   );
 
@@ -60,13 +62,44 @@ const getAllCategoryNutrientLevel = (category) =>
   client.hgetallAsync(`category:${category}`);
 
 const storeRecommendation = (UPC, JSONObject) =>
-  client.hset('recommendation', UPC, JSONObject);
+  client.hsetAsync('recommendation', UPC, JSONObject);
 
 const getRecommendation = (UPC) =>
   client.hgetAsync('recommendation', UPC);
 
 const removeRecommendations = () =>
-  client.del('recommendation');
+  client.delAsync('recommendation');
+
+const checkIfBadOrGoodNutrient = (categoryField) => {
+  let result = false;
+  if (
+    categoryField === 'fiber' ||
+    categoryField === 'protein' ||
+    categoryField.substring(0, 7) === 'vitamin' ||
+    categoryField === 'calcium' ||
+    categoryField === 'iron' ||
+    categoryField === 'potassium' ||
+    categoryField === 'biotin' ||
+    categoryField === 'pantothenicacid' ||
+    categoryField === 'magnesium'
+  ) {
+    result = 'Good';
+  } else if (
+    categoryField === 'cholesterol' ||
+    categoryField === 'sodium' ||
+    categoryField === 'energy' ||
+    categoryField === 'fat' ||
+    categoryField === 'saturatedfat' ||
+    categoryField === 'transfat' ||
+    categoryField === 'salt' ||
+    categoryField === 'caffeine' ||
+    category
+  ) {
+    result = 'Bad';
+  }
+  return result;
+};
+
 
 module.exports = {
   addToQueue,
@@ -77,8 +110,7 @@ module.exports = {
   removeProductInfo,
   adjustNumber,
   sortProductByCategory,
-  getProductWithHigherNutrientLevel,
-  getProductWithLowerNutrientLevel,
+  getProductWithBetterNutrients,
   sortProductByNutrientLevel,
   setAverageCategoryNutrientLevel,
   getAverageCategoryNutrientLevel,
@@ -86,4 +118,5 @@ module.exports = {
   storeRecommendation,
   getRecommendation,
   removeRecommendations,
+  checkIfBadOrGoodNutrient,
 };

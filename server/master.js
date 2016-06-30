@@ -25,6 +25,7 @@ const checkMasterDB = () => {
   //   console.log('Error retreiving data from Gobble Master DB: ', err);
   // });
   console.log('retreiving products info from Master DB every minute for testing purpose');
+  // store the product info temporarily to create matrix
   helper.storeProductInfo(1, {
     UPC: 1,
     name: 'chobani',
@@ -62,10 +63,12 @@ const checkCategoryWorker = () => {
     });
     workers.categoryWorker.on('message', (categoryData) => {
       console.log('master recieved categories from category worker', categoryData);
-      JSON.parse(categoryData).categories.forEach((category) => {
+      JSON.parse(categoryData).categories.forEach((category, index) => {
         helper.addToQueue('createMatrix', JSON.stringify({
           UPC: JSON.parse(categoryData).UPC,
           category,
+          jobNumber: index,
+          numberOfJobs: JSON.parse(categoryData).length,
         }));
       });
     });
@@ -84,7 +87,7 @@ const checkMatrixWorker = () => {
       delete workers.matrixWorker;
     });
     workers.matrixWorker.on('message', (data) => {
-      console.log('master recieved categories from matrix worker', data);
+      console.log(`matrix worker to master: matrix for ${JSON.stringify(data)} is created`);
     });
   }
 };

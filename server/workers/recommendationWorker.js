@@ -1,21 +1,8 @@
 const helper = require('../util/helpers.js');
-// get productInfo and categoreis from master DB
-// get each nutrient and its nutrient level from productInfo
-// get each nutrient and its nutrient level from category table
-// compare two
-  // according to http://www.fda.gov/food/ingredientspackaginglabeling/labelingnutrition/ucm274593.htm#nutrients
-  // if good nutrient is lower than average
-    // fiber, protein, vitamin(), calcium, iron, potassium, biotin, pantothenicacid, magnesium
-    // get products with good nutrient level between average and highest from sortByCategory table
-    // zrangebylex calcium [milk:0300 [milk:9999
-  // if bad nutrient is higher than average
-    // cholesterol, sodium, energy, fat, saturatedfat, transfat, salt, caffeine, taurine
-    // get products with bad nutrient level between average and lowest from sortByCategory table
-    // zrangebylex sodium [milk:0 [milk:0300
-  // send the analysis and recommendations
 
 const getRecommendation = (UPC, callback) => {
-  const JSONObject = {};
+  console.log('recommendation worker working on: ', UPC);
+  const recommendation = {};
   // TODO: request product info from Master DB
   // TODO: then request categories of that product
   const productInfo = {
@@ -26,91 +13,63 @@ const getRecommendation = (UPC, callback) => {
     calcium: 50,
   };
   const categories = ['dairy', 'yogurt'];
+  // loop through each category of UPC
   categories.forEach((category, categoryIndex) => {
-    JSONObject[`${category}`] = {};
-    JSONObject[`${category}`].goodNutrients = {};
-    JSONObject[`${category}`].badNutrients = {};
-    JSONObject[`${category}`].recommendationForGood = [];
-    JSONObject[`${category}`].recommendationForBad = [];
+    recommendation[`${category}`] = {};
+    // get average nutrient level for each category
     helper.getAllCategoryNutrientLevel(category)
     .then((categoryData) => {
+      // store the last index of nutrients which exist in both category and product
+      // so that the recommendation object is sent after every info is filled
       let lastIndex;
       Object.keys(categoryData).forEach((categoryField, categoryFieldIndex) => {
         if (productInfo[categoryField]) {
           lastIndex = categoryFieldIndex;
         }
       });
+      // compare nutrient level if it exists in both category and product
       Object.keys(categoryData).forEach((categoryField, categoryFieldIndex) => {
         if (productInfo[categoryField]) {
-          if (
-            categoryField === 'fiber' ||
-            categoryField === 'protein' ||
-            categoryField.substring(0, 7) === 'vitamin' ||
-            categoryField === 'calcium' ||
-            categoryField === 'iron' ||
-            categoryField === 'potassium' ||
-            categoryField === 'biotin' ||
-            categoryField === 'pantothenicacid' ||
-            categoryField === 'magnesium'
-          ) {
-            JSONObject[`${category}`].goodNutrients[categoryField] = {
+          // check if nutrient is good or bad nutrient
+          const nutrientQuality = helper.checkIfBadOrGoodNutrient(categoryField);
+          if (nutrientQuality) {
+            // store the comparison anaylsis in recommendation object
+            recommendation[`${category}`][`${nutrientQuality}Nutrients`] =
+            recommendation[`${category}`][`${nutrientQuality}Nutrients`] || {};
+            recommendation[`${category}`][`${nutrientQuality}Nutrients`][categoryField] = {
               ratio: productInfo[categoryField] / Number(categoryData[categoryField]),
               product: productInfo[categoryField],
               category: Number(categoryData[categoryField]),
             };
-            if ((productInfo[categoryField] / Number(categoryData[categoryField])) < 1) {
-              // const nutrientLevel = helper.adjustNumber(categoryData[categoryField]);
-              // helper.getProductWithHigherNutrientLevel(categoryField, category, nutrientLevel)
-              // .then((list) => {
-              const exampleList = [1, 2, 3];
-              exampleList.forEach((product) => {
-                // const recommendedUPC = product.split(':')[2];
-                // TODO: request product info from Master DB
-                JSONObject[`${category}`]
-                .recommendationForGood.push({
-                  UPC: product,
-                  name: 'exampleName',
-                  brand: 'exampleBrand',
-                  sodium: 'exampleNutrientLevel',
-                  calcium: 'exampleNutrientLevel',
-                });
-              });
-              if (
-                categoryIndex === categories.length - 1
-                && categoryFieldIndex === lastIndex
-              ) {
-                console.log('Storing recommendation: ', JSONObject);
-                helper.storeRecommendation(UPC, JSON.stringify(JSONObject));
-                callback(JSONObject);
+            const checkIfWorseThanAverage = (quality) => {
+              let result;
+              if (quality === 'Good') {
+                if ((productInfo[categoryField] / Number(categoryData[categoryField])) < 1) {
+                  result = true;
+                }
+              } else {
+                if ((productInfo[categoryField] / Number(categoryData[categoryField])) > 1) {
+                  result = true;
+                }
               }
-              // });
-            }
-          } else if (
-            categoryField === 'cholesterol' ||
-            categoryField === 'sodium' ||
-            categoryField === 'energy' ||
-            categoryField === 'fat' ||
-            categoryField === 'saturatedfat' ||
-            categoryField === 'transfat' ||
-            categoryField === 'salt' ||
-            categoryField === 'caffeine' ||
-            categoryField === 'taurine'
-          ) {
-            JSONObject[`${category}`].badNutrients[categoryField] = {
-              ratio: productInfo[categoryField] / Number(categoryData[categoryField]),
-              product: productInfo[categoryField],
-              category: Number(categoryData[categoryField]),
+              return result;
             };
-            if ((productInfo[categoryField] / Number(categoryData[categoryField])) > 1) {
+            const worseThanAverage = checkIfWorseThanAverage(nutrientQuality);
+            if (worseThanAverage) {
+              // // get products with better nutrients in the same category from the rank table
               // const nutrientLevel = helper.adjustNumber(categoryData[categoryField]);
-              // helper.getProductWithLowerNutrientLevel(categoryField, category, nutrientLevel)
+              // helper.getProductWithBetterNutrients(
+              //   nutrientQuality, categoryField, category, nutrientLevel
+              // )
               // .then((list) => {
               const exampleList = [1, 2, 3];
               exampleList.forEach((product) => {
                 // const recommendedUPC = product.split(':')[2];
-                // TODO: request product info from Master DB
-                JSONObject[`${category}`]
-                .recommendationForBad.push({
+                // TODO: request product info for each recommended product from Master DB
+                // store the recommended products info in recommendation object
+                recommendation[`${category}`][`recommendationFor${nutrientQuality}`] =
+                recommendation[`${category}`][`recommendationFor${nutrientQuality}`] || [];
+                recommendation[`${category}`][`recommendationFor${nutrientQuality}`].push({
                   UPC: product,
                   name: 'exampleName',
                   brand: 'exampleBrand',
@@ -118,13 +77,15 @@ const getRecommendation = (UPC, callback) => {
                   calcium: 'exampleNutrientLevel',
                 });
               });
+              // after looping through every category and nutrient
               if (
                 categoryIndex === categories.length - 1
                 && categoryFieldIndex === lastIndex
               ) {
-                console.log('Storing recommendation: ', JSONObject);
-                helper.storeRecommendation(UPC, JSON.stringify(JSONObject));
-                callback(JSONObject);
+                // store and send the recommendation object
+                console.log('Storing recommendation: ', recommendation);
+                helper.storeRecommendation(UPC, JSON.stringify(recommendation));
+                callback(recommendation);
               }
               // });
             }
@@ -133,7 +94,7 @@ const getRecommendation = (UPC, callback) => {
       });
     })
     .catch((err) => {
-      console.err(err);
+      console.log(err);
     });
   });
 };
