@@ -11,7 +11,7 @@ const helper = require('../../util/helpers.js');
 //     helper.getRecommendation(req.body.upc)
 //     .then((cache) => {
 //       if (cache) {
-//         console.log('cached recommendation', JSON.parse(cache));
+//         console.log('cached recommendation', cache);
 //         res.status(201).send(cache);
 //       } else {
 //         recommendationWorker.getRecommendation(req.body.upc, (err, data) => {

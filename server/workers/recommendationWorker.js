@@ -68,9 +68,12 @@ const getRecommendation = (UPC, callback) => {
                 // const recommendedUPC = product.split(':')[2];
                 // TODO: request product info for each recommended product from Master DB
                 // store the recommended products info in recommendation object
-                recommendation[`${category}`][`recommendationFor${nutrientQuality}`] =
-                recommendation[`${category}`][`recommendationFor${nutrientQuality}`] || [];
-                recommendation[`${category}`][`recommendationFor${nutrientQuality}`].push({
+                recommendation[`${category}`][`${nutrientQuality}Nutrients`]
+                [categoryField].recommendedProducts =
+                recommendation[`${category}`][`${nutrientQuality}Nutrients`]
+                [categoryField].recommendedProducts || [];
+                recommendation[`${category}`][`${nutrientQuality}Nutrients`]
+                [categoryField].recommendedProducts.push({
                   UPC: product,
                   name: 'exampleName',
                   brand: 'exampleBrand',
