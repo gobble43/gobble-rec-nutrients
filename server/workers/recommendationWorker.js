@@ -31,6 +31,7 @@ const getRecommendation = (UPC, callback) => {
       // compare nutrient level if it exists in both category and product
       Object.keys(categoryData).forEach((categoryField, categoryFieldIndex) => {
         if (productInfo[categoryField]) {
+          const DV = helper.checkDV(categoryField);
           // check if nutrient is good or bad nutrient
           const nutrientQuality = helper.checkIfBadOrGoodNutrient(categoryField);
           if (nutrientQuality) {
@@ -38,6 +39,7 @@ const getRecommendation = (UPC, callback) => {
             recommendation[`${category}`][`${nutrientQuality}Nutrients`] =
             recommendation[`${category}`][`${nutrientQuality}Nutrients`] || {};
             recommendation[`${category}`][`${nutrientQuality}Nutrients`][categoryField] = {
+              DV,
               ratio: productInfo[categoryField] / Number(categoryData[categoryField]),
               product: productInfo[categoryField],
               category: Number(categoryData[categoryField]),
@@ -93,6 +95,15 @@ const getRecommendation = (UPC, callback) => {
               }
               // });
             }
+          } else {
+            recommendation[`${category}`].nutrientsWithoutRecommendation =
+            recommendation[`${category}`].nutrientsWithoutRecommendation || {};
+            recommendation[`${category}`].nutrientsWithoutRecommendation[categoryField] = {
+              DV,
+              ratio: productInfo[categoryField] / Number(categoryData[categoryField]),
+              product: productInfo[categoryField],
+              category: Number(categoryData[categoryField]),
+            };
           }
         }
       });
