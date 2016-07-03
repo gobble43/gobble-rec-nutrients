@@ -8,7 +8,7 @@ Gobble-rec-nutrients is a microservice, which accepts a request with
 - product barcode (UPC) or
 - specific nutrient 
 
-and sends back an analysis of
+and sends back a comparison analysis of
 
 - product specific nutrients level 
 - average nutrients level of product category
@@ -35,8 +35,6 @@ $ npm install
 ```
 Create `env/development.env` and set environment variables. Follow `env/example.env`.
 
-add any additional needed commands and instructions here
-
 ```sh
 $ npm start
 ```
@@ -51,7 +49,7 @@ $ npm test
 ```
 
 ## Tech
-> List any libraries, APIs, and tech stack here
+> Redis, Cluster, Express, Bluebird, Supertest, Mocha 
 
 ## Database Schema
 > Add schema for application db here
@@ -59,34 +57,31 @@ $ npm test
 ## Directory Layout
 > Use the diagram below as an example and starting point
 ```
-├── /env/                       # Environment variables
-├── /node_modules/              # 3rd-party libraries and utilities
-├── /client/                    # Client source code
-│   ├── /build/                 # Build file produced with Browserify
-│   ├── /components/            # React components
-│     ├── /home-view/           # Home view components
-│     ├── /main-layout/         # Main Layout components
-│     ├── /record-view/         # Record view components
-│     ├── /report-view/         # Reporting view components
-│     ├── /App.jsx/             # Main React App
-│   ├── /lib/                   # Lib files, e.g. from FACE API
-│   ├── /style/                 # CSS Style files
-│   ├── /index.jsx              # Index file to attach React to DOM
-├── /server/                    # Server source code
-│   ├── /config/                # Initial server config files
-│   ├── /controllers/           # Controllers for database interaction
-│   ├── /lib/                   # Lib for util functions
-│   ├── /models/                # Data models
-│   ├── /routes/                # Routes for incoming GET and POST requests
-│   ├── /views/                 # Jade templating views
-│   └── /server.js              # Server-side startup script
-├── /test/                      # Server and client side tests
-│   ├── /client/                # Client side tests
-│   ├── /server/                # Server side tests
-|   ├── /data/                  # Holds seed & dummy data
-└── package.json                # List of 3rd party libraries and utilities to be installed
-└── .babelrc                    # Babel presets
-└── .eslintrc                   # ESLint settings
+├── /env/                            # Environment variables
+├── /node_modules/                   # 3rd-party libraries and utilities
+├── /server/                         # Server source code
+│  ├── /httpServer/                
+│  │   ├── /config/                  # HTTP Server configuration
+│  │   │  ├── /middleware.js/        # HTTP Server middleware
+│  │   │  ├── /routes.js/            # HTTP Server routes for incoming GET and POST requests
+│  │   ├── /server.js/               # HTTP Server initialization
+│  ├── /util/                      
+│  │   ├── /helpers.js/              # Helper functions for redis
+│  ├── /workers/                
+│  │   ├── /categoryWorker.js/       # Category worker to collect category information
+│  │   ├── /matrixWorker.js/         # Matrix worker for computation and database creation
+│  │   ├── /recommendationWorker.js/ # Recommendation worker to create recommendation
+│  └── /master.js                    # Server-side startup script
+├── /test/                           # Server side tests
+│  ├── /setup.js/                    # Tests configuration setup
+│  ├── /spec.js/                     # Server side tests
+└── .eslintrc                        # ESLint settings
+└── .gitignore
+└── .travis.yml                      # Travis CI configuration
+└── LICENSE                         
+└── package.json                     # List of 3rd party libraries and utilities to be installed
+└── PULL_REQUEST_TEMPLATE              
+└── README.md                
 ```
 
 ## Team

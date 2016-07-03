@@ -1,6 +1,7 @@
 const helper = require('../util/helpers.js');
 
 const getRecommendation = (UPC, callback) => {
+  let sentError = false;
   console.log('recommendation worker working on: ', UPC);
   const recommendation = {};
   // TODO: request product info from Master DB
@@ -12,6 +13,7 @@ const getRecommendation = (UPC, callback) => {
     sodium: 300,
     calcium: 50,
   };
+  recommendation.basicInfo = productInfo;
   const categories = ['dairy', 'yogurt'];
   // loop through each category of UPC
   categories.forEach((category, categoryIndex) => {
@@ -30,6 +32,7 @@ const getRecommendation = (UPC, callback) => {
       // compare nutrient level if it exists in both category and product
       Object.keys(categoryData).forEach((categoryField, categoryFieldIndex) => {
         if (productInfo[categoryField]) {
+          const DV = helper.checkDV(categoryField);
           // check if nutrient is good or bad nutrient
           const nutrientQuality = helper.checkIfBadOrGoodNutrient(categoryField);
           if (nutrientQuality) {
@@ -37,6 +40,7 @@ const getRecommendation = (UPC, callback) => {
             recommendation[`${category}`][`${nutrientQuality}Nutrients`] =
             recommendation[`${category}`][`${nutrientQuality}Nutrients`] || {};
             recommendation[`${category}`][`${nutrientQuality}Nutrients`][categoryField] = {
+              DV,
               ratio: productInfo[categoryField] / Number(categoryData[categoryField]),
               product: productInfo[categoryField],
               category: Number(categoryData[categoryField]),
@@ -67,9 +71,12 @@ const getRecommendation = (UPC, callback) => {
                 // const recommendedUPC = product.split(':')[2];
                 // TODO: request product info for each recommended product from Master DB
                 // store the recommended products info in recommendation object
-                recommendation[`${category}`][`recommendationFor${nutrientQuality}`] =
-                recommendation[`${category}`][`recommendationFor${nutrientQuality}`] || [];
-                recommendation[`${category}`][`recommendationFor${nutrientQuality}`].push({
+                recommendation[`${category}`][`${nutrientQuality}Nutrients`]
+                [categoryField].recommendedProducts =
+                recommendation[`${category}`][`${nutrientQuality}Nutrients`]
+                [categoryField].recommendedProducts || [];
+                recommendation[`${category}`][`${nutrientQuality}Nutrients`]
+                [categoryField].recommendedProducts.push({
                   UPC: product,
                   name: 'exampleName',
                   brand: 'exampleBrand',
@@ -85,20 +92,31 @@ const getRecommendation = (UPC, callback) => {
                 // store and send the recommendation object
                 console.log('Storing recommendation: ', recommendation);
                 helper.storeRecommendation(UPC, JSON.stringify(recommendation));
-                callback(recommendation);
+                callback(null, recommendation);
               }
               // });
             }
+          } else {
+            recommendation[`${category}`].nutrientsWithoutRecommendation =
+            recommendation[`${category}`].nutrientsWithoutRecommendation || {};
+            recommendation[`${category}`].nutrientsWithoutRecommendation[categoryField] = {
+              DV,
+              ratio: productInfo[categoryField] / Number(categoryData[categoryField]),
+              product: productInfo[categoryField],
+              category: Number(categoryData[categoryField]),
+            };
           }
         }
       });
     })
     .catch((err) => {
-      console.log(err);
+      if (!sentError) {
+        sentError = true;
+        callback(err);
+      }
     });
   });
 };
-
 
 module.exports = {
   getRecommendation,

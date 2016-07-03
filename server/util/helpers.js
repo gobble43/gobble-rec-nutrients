@@ -90,7 +90,7 @@ const checkIfBadOrGoodNutrient = (categoryField) => {
     categoryField === 'energy' ||
     categoryField === 'fat' ||
     categoryField === 'saturatedfat' ||
-    categoryField === 'transfat' ||
+    categoryField === 'carbohydrates' ||
     categoryField === 'salt' ||
     categoryField === 'caffeine' ||
     category
@@ -98,6 +98,70 @@ const checkIfBadOrGoodNutrient = (categoryField) => {
     result = 'Bad';
   }
   return result;
+};
+
+const checkDV = (nutrient) => {
+  let DV;
+  if (nutrient === 'energy') {
+    DV = 2000;
+  } else if (nutrient === 'fat') {
+    DV = 65;
+  } else if (nutrient === 'sodium') {
+    DV = 2400;
+  } else if (nutrient === 'saturatedfat') {
+    DV = 20;
+  } else if (nutrient === 'cholesterol') {
+    DV = 300;
+  } else if (nutrient === 'carbohydrates') {
+    DV = 300;
+  } else if (nutrient === 'fiber') {
+    DV = 25;
+  } else if (nutrient === 'protein') {
+    DV = 50;
+  } else if (nutrient === 'vitamina') {
+    DV = 5000;
+  } else if (nutrient === 'vitaminc') {
+    DV = 60;
+  } else if (nutrient === 'vitamind') {
+    DV = 400;
+  } else if (nutrient === 'vitamine') {
+    DV = 30;
+  } else if (nutrient === 'vitamink') {
+    DV = 80;
+  } else if (nutrient === 'vitaminb6') {
+    DV = 2;
+  } else if (nutrient === 'vitaminb12') {
+    DV = 6;
+  } else if (nutrient === 'biotin') {
+    DV = 300;
+  } else if (nutrient === 'pantothenicacid') {
+    DV = 10;
+  } else if (nutrient === 'potassium') {
+    DV = 3500;
+  } else if (nutrient === 'calcium') {
+    DV = 1000;
+  } else if (nutrient === 'phosphorus') {
+    DV = 1000;
+  } else if (nutrient === 'iron') {
+    DV = 18;
+  } else if (nutrient === 'magnesium') {
+    DV = 400;
+  } else if (nutrient === 'zinc') {
+    DV = 15;
+  } else if (nutrient === 'manganese') {
+    DV = 2;
+  } else if (nutrient === 'selenium') {
+    DV = 70;
+  } else if (nutrient === 'chromium') {
+    DV = 120;
+  } else if (nutrient === 'molybdenum') {
+    DV = 75;
+  } else if (nutrient === 'iodine') {
+    DV = 150;
+  } else {
+    DV = null;
+  }
+  return DV;
 };
 
 
@@ -119,4 +183,5 @@ module.exports = {
   getRecommendation,
   removeRecommendations,
   checkIfBadOrGoodNutrient,
+  checkDV,
 };
