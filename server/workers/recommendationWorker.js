@@ -13,6 +13,7 @@ const getRecommendation = (UPC, callback) => {
     sodium: 300,
     calcium: 50,
   };
+  recommendation.basicInfo = productInfo;
   const categories = ['dairy', 'yogurt'];
   // loop through each category of UPC
   categories.forEach((category, categoryIndex) => {
