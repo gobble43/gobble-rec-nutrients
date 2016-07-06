@@ -78,7 +78,9 @@ const getRecommendation = (UPC, callback) => {
                 if (worseThanAverage) {
                   // get products with better nutrients in the same category from the rank table
                   const nutrientLevel = helper.adjustNumber(categoryData[categoryField]);
-                  categoryDataFunctions.push(helper.getProductWithBetterNutrients(nutrientQuality, categoryField, category, nutrientLevel));
+                  categoryDataFunctions.push(
+                    helper.getProductWithBetterNutrients(
+                      nutrientQuality, categoryField, category, nutrientLevel));
                   categoryDataFunctionsIndex.push([nutrientQuality, categoryField, category]);
                 }
               } else {
@@ -133,7 +135,6 @@ const getRecommendation = (UPC, callback) => {
                 });
 
                 // store and send the recommendation object
-                console.log('Promise Storing recommendation: ', JSON.stringify(recommendation));
                 helper.storeRecommendation(UPC, JSON.stringify(recommendation));
                 callback(null, recommendation);
               });
