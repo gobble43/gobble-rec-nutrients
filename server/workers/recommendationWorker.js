@@ -1,5 +1,6 @@
 const helper = require('../util/helpers.js');
 const Promise = require('bluebird');
+const fetch = require('isomorphic-fetch');
 
 const getRecommendation = (UPC, callback) => {
   const categoryFunctions = [];
