@@ -18,7 +18,7 @@ const getRecommendation = (UPC, callback) => {
     method: 'get',
   })
   .then((res) => res.json())
-  .catch((err) => callback(err))
+  .catch(() => callback('No data for the requested product'))
   .then((data) => {
     if (!data.product) {
       callback('No data for the requested product');
