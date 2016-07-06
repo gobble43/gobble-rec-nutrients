@@ -5,6 +5,5 @@ services:
   - redis-server
 before_script:
   - npm run lint
-script:
   - node server/httpServer/server.js &
   - node server/master.js &

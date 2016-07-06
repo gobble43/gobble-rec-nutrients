@@ -1,39 +1,49 @@
 const helper = require('./util/helpers.js');
 const cluster = require('cluster');
 const redis = require('redis');
+const fetch = require('isomorphic-fetch');
 const client = redis.createClient();
 const workers = {};
 
 const checkMasterDB = () => {
-  // // fetch all the newly added products & nutrients from 1 hour ago til now
-  // fetch('/masterDB URL', {
-  //   method: 'get',
-  // }).then((res) => {
-  //   console.log('===RES', res);
-  //   if (res.body.length > 0) {
-  //     // delete cached recommendation
-  //     helper.removeRecommendations();
-  //     // loop through the res.body (array)
-  //     res.body.forEach((product) => {
-  //       // store the information
-  //       helper.storeProductInfo(product.UPC, product);
-  //       // send each UPC to getCategories queue
-  //       helper.addToQueue('getCategories', product.UPC);
-  //     });
-  //   }
-  // }).catch((err) => {
-  //   console.log('Error retreiving data from Gobble Master DB: ', err);
-  // });
-  console.log('retreiving products info from Master DB every minute for testing purpose');
-  // store the product info temporarily to create matrix
-  helper.storeProductInfo(1, {
-    UPC: 1,
-    name: 'chobani',
-    brand: 'meiji',
-    sodium: 200,
-    calcium: 100,
-  });
-  helper.addToQueue('getCategories', 1);
+  console.log('fetching the data from Master DB');
+  // fetch all the newly added products & nutrients from 1 hour ago til now
+  const timezoneOffset = (new Date()).getTimezoneOffset() * 60000;
+  const timeStamp = () => new Date(Date.now() - timezoneOffset)
+    .toISOString()
+    .slice(0, 19)
+    .replace('T', ' ');
+  const time = timeStamp();
+  const hourAgo =
+  time.substring(0, time.length - 7)
+  + (Number(time[time.length - 7]) - 1).toString()
+  + time.substring(time.length - 6, time.length);
+
+  const url = `http://localhost:4570/db/productsByDate?date="${hourAgo}"`;
+  fetch(url, {
+    method: 'get',
+  })
+  .then((res) => res.json())
+  .catch((err) => console.log(err))
+  .then((data) => {
+    console.log('Data received from Master DB: ', data);
+    // delete cached recommendation
+    helper.removeRecommendations();
+    // loop through the res.body (array)
+    data.forEach((product) => {
+      // temporarily store the information
+      helper.storeProductInfo(product.product.upc, product.product);
+      product.categories.forEach((category, index) => {
+        helper.addToQueue('createMatrix', JSON.stringify({
+          UPC: product.product.upc,
+          category,
+          jobNumber: index,
+          numberOfJobs: product.categories.length - 1,
+        }));
+      });
+    });
+  })
+  .catch((err) => console.log(err));
 };
 
 const checkHTTPServer = () => {
@@ -46,31 +56,6 @@ const checkHTTPServer = () => {
     workers.httpServer.on('exit', () => {
       console.log('http server exited');
       delete workers.httpServer;
-    });
-  }
-};
-
-const checkCategoryWorker = () => {
-  if (workers.categoryWorker === undefined) {
-    console.log('master created a category worker');
-    workers.categoryWorker = cluster.fork({ ROLE: 'category worker' });
-    workers.categoryWorker.on('online', () => {
-      console.log('category worker online');
-    });
-    workers.categoryWorker.on('exit', () => {
-      console.log('category worker exited');
-      delete workers.categoryWorker;
-    });
-    workers.categoryWorker.on('message', (categoryData) => {
-      console.log('master recieved categories from category worker', categoryData);
-      JSON.parse(categoryData).categories.forEach((category, index) => {
-        helper.addToQueue('createMatrix', JSON.stringify({
-          UPC: JSON.parse(categoryData).UPC,
-          category,
-          jobNumber: index,
-          numberOfJobs: JSON.parse(categoryData).length,
-        }));
-      });
     });
   }
 };
@@ -100,7 +85,6 @@ const startMaster = () => {
 
     const loopWorkers = () => {
       checkHTTPServer();
-      checkCategoryWorker();
       checkMatrixWorker();
     };
 
@@ -115,8 +99,6 @@ if (cluster.isMaster) {
   startMaster();
 } else if (process.env.ROLE === 'http server') {
   require('./httpServer/server.js');
-} else if (process.env.ROLE === 'category worker') {
-  require('./workers/categoryWorker.js');
 } else if (process.env.ROLE === 'matrix worker') {
   require('./workers/matrixWorker.js');
 }
