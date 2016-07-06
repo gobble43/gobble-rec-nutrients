@@ -7,10 +7,10 @@ describe('Gobble recommendation', () => {
     it('should return status code 404 and notify that recommendation is not ready', (done) => {
       request(appUrl)
       .post('/api/getRecommendation')
-      .send({ UPC: 1 })
+      .send({ upc: 1 })
       .expect(
         404,
-        'Recommendation is not ready yet: TypeError: Cannot convert undefined or null to object'
+        'Recommendation is not ready yet: No data for the requested product'
       )
       .end((err) => {
         if (err) {
@@ -22,16 +22,3 @@ describe('Gobble recommendation', () => {
     });
   });
 });
-// it('should return status code 201 and return an object', (done) => {
-//   request(appUrl)
-//   .post('/api/getRecommendation')
-//   .send({ UPC: 1 })
-//   .expect(201, 'object')
-//   .end((err) => {
-//     if (err) {
-//       done(err);
-//     } else {
-//       done();
-//     }
-//   });
-// });

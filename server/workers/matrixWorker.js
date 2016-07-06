@@ -18,9 +18,17 @@ const startMatrixWorker = () => {
           helper.getProductInfo(UPC)
           .then((info) => {
             const ProductInfo = JSON.parse(info);
+            let lastIndex;
+            Object.keys(ProductInfo).forEach((key, i) => {
+              if (key !== 'upc' && key !== 'image' && key !== 'brand' && key !== 'name'
+                && key !== 'Product_created_at' && ProductInfo[key] !== null) {
+                lastIndex = i;
+              }
+            });
             // for each nutrient in the product
             Object.keys(ProductInfo).forEach((key, i) => {
-              if (key !== 'UPC' && key !== 'brand' && key !== 'name') {
+              if (key !== 'upc' && key !== 'brand' && key !== 'name' &&
+                key !== 'Product_created_at' && ProductInfo[key] !== null) {
                 const nutrientLevel = helper.adjustNumber(ProductInfo[key]);
                 // 1. create a product rank table sorted by both category and nutrient level
                 // zadd sortByCategory:calcium 0 milk:0100:129428359
@@ -46,7 +54,7 @@ const startMatrixWorker = () => {
                       category, key, newAverageNutrientLevel, newNumberOfProducts
                     );
                     // after looping through every nutrient in the product
-                    if (i === Object.keys(ProductInfo).length - 1) {
+                    if (i === lastIndex) {
                       // check if the entire job is done for this UPC
                       if (jobNumber === numberOfJobs) {
                         // remove product info to save the space
@@ -62,7 +70,7 @@ const startMatrixWorker = () => {
                       category, key, Number(nutrientLevel), 1
                     );
                     // after looping through every nutrient in the product
-                    if (i === Object.keys(ProductInfo).length - 1) {
+                    if (i === lastIndex) {
                       // check if the entire job is done for this UPC
                       if (jobNumber === numberOfJobs) {
                         // remove product information

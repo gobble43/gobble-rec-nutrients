@@ -16,15 +16,15 @@ const getProductInfo = (UPC) => client.hgetAsync(`product:${UPC}`, 'productInfo'
 const removeProductInfo = (UPC) => client.delAsync(`product:${UPC}`);
 
 const adjustNumber = (num) => {
-  const digits = num.toString().split('.')[0];
+  const digits = Math.ceil(Number(num)).toString();
   let adjustedNumber;
   if (digits.length < 4) {
     if (digits.length === 3) {
-      adjustedNumber = `0${num.toString()}`;
+      adjustedNumber = `0${digits}`;
     } else if (digits.length === 2) {
-      adjustedNumber = `00${num.toString()}`;
+      adjustedNumber = `00${digits}`;
     } else if (digits.length === 1) {
-      adjustedNumber = `000${num.toString()}`;
+      adjustedNumber = `000${digits}`;
     }
   }
   return adjustedNumber;
@@ -34,17 +34,19 @@ const sortProductByCategory = (key, category, nutrientLevel, UPC) =>
   client.zaddAsync(`sortByCategory:${key}`, 0, `${category}:${nutrientLevel}:${UPC}`);
 
 const getProductWithBetterNutrients = (quality, categoryField, category, nutrientLevel) => {
+  let command;
   if (quality === 'Good') {
-    client.zrangebylexAsync(
+    command = client.zrangebylexAsync(
       `sortByCategory:${categoryField}`,
       `[${category}:${nutrientLevel}`, `[${category}:9999`
     );
   } else {
-    client.zrangebylexAsync(
+    command = client.zrangebylexAsync(
       `sortByCategory:${categoryField}`,
       `[${category}:0000`, `[${category}:${nutrientLevel}`
     );
   }
+  return command;
 };
 
 const sortProductByNutrientLevel = (key, nutrientLevel, category, UPC) =>
@@ -92,8 +94,7 @@ const checkIfBadOrGoodNutrient = (categoryField) => {
     categoryField === 'saturatedfat' ||
     categoryField === 'carbohydrates' ||
     categoryField === 'salt' ||
-    categoryField === 'caffeine' ||
-    category
+    categoryField === 'caffeine'
   ) {
     result = 'Bad';
   }
