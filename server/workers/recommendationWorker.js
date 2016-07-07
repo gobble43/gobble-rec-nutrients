@@ -20,6 +20,7 @@ const getRecommendation = (UPC, callback) => {
   .then((res) => res.json())
   .catch(() => callback('No data for the requested product'))
   .then((data) => {
+    console.log(data)
     if (!data.product) {
       callback('No data for the requested product');
     }
@@ -79,6 +80,7 @@ const getRecommendation = (UPC, callback) => {
                 if (worseThanAverage) {
                   // get products with better nutrients in the same category from the rank table
                   const nutrientLevel = helper.adjustNumber(categoryData[categoryField]);
+                  console.log(categoryData, categoryField, nutrientLevel);
                   categoryDataFunctions.push(
                     helper.getProductWithBetterNutrients(
                       nutrientQuality, categoryField, category, nutrientLevel));

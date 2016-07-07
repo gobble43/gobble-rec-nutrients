@@ -9,17 +9,13 @@ const checkMasterDB = () => {
   console.log('fetching the data from Master DB');
   // fetch all the newly added products & nutrients from 1 hour ago til now
   const timezoneOffset = (new Date()).getTimezoneOffset() * 60000;
-  const timeStamp = () => new Date(Date.now() - timezoneOffset)
-    .toISOString()
+  const time = new Date(Date.now() - timezoneOffset);
+  time.setSeconds(time.getSeconds() - 2);
+  const timeStamp = time.toISOString()
     .slice(0, 19)
     .replace('T', ' ');
-  const time = timeStamp();
-  const hourAgo =
-  time.substring(0, time.length - 7)
-  + (Number(time[time.length - 7]) - 1).toString()
-  + time.substring(time.length - 6, time.length);
 
-  const url = `http://localhost:4570/db/productsByDate?date="${hourAgo}"`;
+  const url = `http://localhost:4570/db/productsByDate?date="${timeStamp}"`;
   fetch(url, {
     method: 'get',
   })
@@ -91,7 +87,7 @@ const startMaster = () => {
     loopWorkers();
     setInterval(loopWorkers, 2000);
     checkMasterDB();
-    setInterval(checkMasterDB, 360000);
+    setInterval(checkMasterDB, 1000);
   });
 };
 
