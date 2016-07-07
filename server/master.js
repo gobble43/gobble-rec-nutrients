@@ -23,21 +23,23 @@ const checkMasterDB = () => {
   .then((data) => {
     console.log('Data received from Master DB: ', data);
     if (data) {
-      // delete cached recommendation
-      helper.removeRecommendations();
       // loop through the res.body (array)
       data.forEach((product) => {
-        // temporarily store the information
-        helper.storeProductInfo(product.product.upc, product.product);
-        product.categories.forEach((category, index) => {
-          helper.addToQueue('createMatrix', JSON.stringify({
-            UPC: product.product.upc,
-            category,
-            jobNumber: index,
-            numberOfJobs: product.categories.length - 1,
-          }));
-        });
+        if (product.product.name) {
+          // temporarily store the information
+          helper.storeProductInfo(product.product.upc, product.product);
+          product.categories.forEach((category, index) => {
+            helper.addToQueue('createMatrix', JSON.stringify({
+              UPC: product.product.upc,
+              category,
+              jobNumber: index,
+              numberOfJobs: product.categories.length - 1,
+            }));
+          });
+        }
       });
+      // delete cached recommendation
+      helper.removeRecommendations();
     }
   })
   .catch((err) => console.log(err));
