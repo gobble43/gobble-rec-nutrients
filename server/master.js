@@ -20,24 +20,25 @@ const checkMasterDB = () => {
     method: 'get',
   })
   .then((res) => res.json())
-  .catch((err) => console.log(err))
   .then((data) => {
     console.log('Data received from Master DB: ', data);
-    // delete cached recommendation
-    helper.removeRecommendations();
-    // loop through the res.body (array)
-    data.forEach((product) => {
-      // temporarily store the information
-      helper.storeProductInfo(product.product.upc, product.product);
-      product.categories.forEach((category, index) => {
-        helper.addToQueue('createMatrix', JSON.stringify({
-          UPC: product.product.upc,
-          category,
-          jobNumber: index,
-          numberOfJobs: product.categories.length - 1,
-        }));
+    if (data) {
+      // delete cached recommendation
+      helper.removeRecommendations();
+      // loop through the res.body (array)
+      data.forEach((product) => {
+        // temporarily store the information
+        helper.storeProductInfo(product.product.upc, product.product);
+        product.categories.forEach((category, index) => {
+          helper.addToQueue('createMatrix', JSON.stringify({
+            UPC: product.product.upc,
+            category,
+            jobNumber: index,
+            numberOfJobs: product.categories.length - 1,
+          }));
+        });
       });
-    });
+    }
   })
   .catch((err) => console.log(err));
 };
