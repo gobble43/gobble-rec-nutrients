@@ -69,8 +69,10 @@ const storeRecommendation = (UPC, JSONObject) =>
 const getRecommendation = (UPC) =>
   client.hgetAsync('recommendation', UPC);
 
-const removeRecommendations = () =>
+const removeRecommendations = () => {
+  console.log('removing recommendations');
   client.delAsync('recommendation');
+};
 
 const checkIfBadOrGoodNutrient = (categoryField) => {
   let result = false;

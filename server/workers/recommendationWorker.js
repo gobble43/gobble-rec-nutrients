@@ -20,7 +20,7 @@ const getRecommendation = (UPC, callback) => {
   .then((res) => res.json())
   .catch(() => callback('No data for the requested product'))
   .then((data) => {
-    if (!data.product) {
+    if (!data.product || Object.keys(data.product).length === 0 || data.categories.length === 0) {
       callback('No data for the requested product');
     }
     const productInfo = data.product;
@@ -41,62 +41,63 @@ const getRecommendation = (UPC, callback) => {
       categoryFunctions.push(helper.getAllCategoryNutrientLevel(category));
       categoryFunctionsIndex.push(category);
     });
-
     Promise.all(categoryFunctions)
       .then((categoryDataArray) => {
         categoryDataArray.forEach((categoryData, categoryDataIndex) => {
           const category = categoryFunctionsIndex[categoryDataIndex];
           // compare nutrient level if it exists in both category and product
-          Object.keys(categoryData).forEach((categoryField) => {
-            if (productInfo[categoryField]) {
-              const DV = helper.checkDV(categoryField);
-              // check if nutrient is good or bad nutrient
-              const nutrientQuality = helper.checkIfBadOrGoodNutrient(categoryField);
-              if (nutrientQuality) {
-                // store the comparison anaylsis in recommendation object
-                recommendation[`${category}`][`${nutrientQuality}Nutrients`] =
-                recommendation[`${category}`][`${nutrientQuality}Nutrients`] || {};
-                recommendation[`${category}`][`${nutrientQuality}Nutrients`][categoryField] = {
-                  DV,
-                  ratio: productInfo[categoryField] / Number(categoryData[categoryField]),
-                  product: productInfo[categoryField],
-                  category: Number(categoryData[categoryField]),
-                };
-                const checkIfWorseThanAverage = (quality) => {
-                  let result;
-                  if (quality === 'Good') {
-                    if ((productInfo[categoryField] / Number(categoryData[categoryField])) < 1) {
-                      result = true;
+          if (categoryData) {
+            Object.keys(categoryData).forEach((categoryField) => {
+              if (productInfo[categoryField]) {
+                const DV = helper.checkDV(categoryField);
+                // check if nutrient is good or bad nutrient
+                const nutrientQuality = helper.checkIfBadOrGoodNutrient(categoryField);
+                if (nutrientQuality) {
+                  // store the comparison anaylsis in recommendation object
+                  recommendation[`${category}`][`${nutrientQuality}Nutrients`] =
+                  recommendation[`${category}`][`${nutrientQuality}Nutrients`] || {};
+                  recommendation[`${category}`][`${nutrientQuality}Nutrients`][categoryField] = {
+                    DV,
+                    ratio: productInfo[categoryField] / Number(categoryData[categoryField]),
+                    product: productInfo[categoryField],
+                    category: Number(categoryData[categoryField]),
+                  };
+                  const checkIfWorseThanAverage = (quality) => {
+                    let result;
+                    if (quality === 'Good') {
+                      if ((productInfo[categoryField] / Number(categoryData[categoryField])) < 1) {
+                        result = true;
+                      }
+                    } else {
+                      if ((productInfo[categoryField] / Number(categoryData[categoryField])) > 1) {
+                        result = true;
+                      }
                     }
-                  } else {
-                    if ((productInfo[categoryField] / Number(categoryData[categoryField])) > 1) {
-                      result = true;
-                    }
+                    return result;
+                  };
+                  const worseThanAverage = checkIfWorseThanAverage(nutrientQuality);
+                  if (worseThanAverage) {
+                    // get products with better nutrients in the same category from the rank table
+                    const nutrientLevel = helper.adjustNumber(categoryData[categoryField]);
+                    console.log(categoryData, categoryField, nutrientLevel);
+                    categoryDataFunctions.push(
+                      helper.getProductWithBetterNutrients(
+                        nutrientQuality, categoryField, category, nutrientLevel));
+                    categoryDataFunctionsIndex.push([nutrientQuality, categoryField, category]);
                   }
-                  return result;
-                };
-                const worseThanAverage = checkIfWorseThanAverage(nutrientQuality);
-                if (worseThanAverage) {
-                  // get products with better nutrients in the same category from the rank table
-                  const nutrientLevel = helper.adjustNumber(categoryData[categoryField]);
-                  console.log(categoryData, categoryField, nutrientLevel);
-                  categoryDataFunctions.push(
-                    helper.getProductWithBetterNutrients(
-                      nutrientQuality, categoryField, category, nutrientLevel));
-                  categoryDataFunctionsIndex.push([nutrientQuality, categoryField, category]);
+                } else {
+                  recommendation[`${category}`].nutrientsWithoutRecommendation =
+                  recommendation[`${category}`].nutrientsWithoutRecommendation || {};
+                  recommendation[`${category}`].nutrientsWithoutRecommendation[categoryField] = {
+                    DV,
+                    ratio: productInfo[categoryField] / Number(categoryData[categoryField]),
+                    product: productInfo[categoryField],
+                    category: Number(categoryData[categoryField]),
+                  };
                 }
-              } else {
-                recommendation[`${category}`].nutrientsWithoutRecommendation =
-                recommendation[`${category}`].nutrientsWithoutRecommendation || {};
-                recommendation[`${category}`].nutrientsWithoutRecommendation[categoryField] = {
-                  DV,
-                  ratio: productInfo[categoryField] / Number(categoryData[categoryField]),
-                  product: productInfo[categoryField],
-                  category: Number(categoryData[categoryField]),
-                };
               }
-            }
-          });
+            });
+          }
         });
 
         Promise.all(categoryDataFunctions)

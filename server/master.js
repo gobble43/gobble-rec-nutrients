@@ -4,28 +4,34 @@ const redis = require('redis');
 const fetch = require('isomorphic-fetch');
 const client = redis.createClient();
 const workers = {};
-
+let lastChecked;
 const checkMasterDB = () => {
   console.log('fetching the data from Master DB');
   // fetch all the newly added products & nutrients from 1 hour ago til now
-  const timezoneOffset = (new Date()).getTimezoneOffset() * 60000;
-  const time = new Date(Date.now() - timezoneOffset);
-  time.setSeconds(time.getSeconds() - 2);
-  const timeStamp = time.toISOString()
-    .slice(0, 19)
-    .replace('T', ' ');
-
+  if (!lastChecked) {
+    const timezoneOffset = (new Date()).getTimezoneOffset() * 60000;
+    const time = new Date(Date.now() - timezoneOffset);
+    time.setSeconds(time.getSeconds() - 1.2);
+    timeStamp = time.toISOString()
+      .slice(0, 19)
+      .replace('T', ' ');
+  } else {
+    timeStamp = lastChecked;
+  }
   const url = `http://localhost:4570/db/productsByDate?date="${timeStamp}"`;
   fetch(url, {
     method: 'get',
   })
   .then((res) => res.json())
   .then((data) => {
-    console.log('Data received from Master DB: ', data);
     if (data) {
       // loop through the res.body (array)
       data.forEach((product) => {
         if (product.product.name) {
+          console.log('Data received from Master DB: ', product.product);
+          lastChecked = product.product.Product_created_at
+            .slice(0, 19)
+            .replace('T', ' ');
           // temporarily store the information
           helper.storeProductInfo(product.product.upc, product.product);
           product.categories.forEach((category, index) => {
@@ -76,6 +82,11 @@ const checkMatrixWorker = () => {
   }
 };
 
+const clearCache = () => {
+  console.log('periodically removing cache');
+  helper.removeRecommendations();
+};
+
 const startMaster = () => {
   console.log('master started');
 
@@ -86,7 +97,8 @@ const startMaster = () => {
       checkHTTPServer();
       checkMatrixWorker();
     };
-
+    clearCache();
+    setInterval(clearCache, 2000);
     loopWorkers();
     setInterval(loopWorkers, 2000);
     checkMasterDB();
