@@ -26,12 +26,16 @@ const adjustNumber = (num) => {
     } else if (digits.length === 1) {
       adjustedNumber = `000${digits}`;
     }
+  } else {
+    adjustedNumber = digits;
   }
   return adjustedNumber;
 };
 
-const sortProductByCategory = (key, category, nutrientLevel, UPC) =>
-  client.zaddAsync(`sortByCategory:${key}`, 0, `${category}:${nutrientLevel}:${UPC}`);
+const sortProductByCategory = (key, category, nutrientLevel, UPC) => {
+  console.log('ADDING THE CATEGORY MATRIX: ', key, category, nutrientLevel, UPC);
+  return client.zaddAsync(`sortByCategory:${key}`, 0, `${category}:${nutrientLevel}:${UPC}`);
+};
 
 const getProductWithBetterNutrients = (quality, categoryField, category, nutrientLevel) => {
   let command;
@@ -49,13 +53,15 @@ const getProductWithBetterNutrients = (quality, categoryField, category, nutrien
   return command;
 };
 
-const sortProductByNutrientLevel = (key, nutrientLevel, category, UPC) =>
-  client.zaddAsync(`sortByLevel:${key}`, nutrientLevel, `${category}:${UPC}`);
+// const sortProductByNutrientLevel = (key, nutrientLevel, category, UPC) =>
+//   client.zaddAsync(`sortByLevel:${key}`, nutrientLevel, `${category}:${UPC}`);
 
-const setAverageCategoryNutrientLevel = (category, key, nutrientLevel, numberOfProducts) =>
-  client.hmsetAsync(
+const setAverageCategoryNutrientLevel = (category, key, nutrientLevel, numberOfProducts) => {
+  console.log('Setting new average category level: ', category, key, nutrientLevel, numberOfProducts);
+  return client.hmsetAsync(
     `category:${category}`, key, nutrientLevel, `${key}Products`, numberOfProducts
   );
+};
 
 const getAverageCategoryNutrientLevel = (category, key) =>
   client.hmgetAsync(`category:${category}`, key, `${key}Products`);
@@ -178,7 +184,6 @@ module.exports = {
   adjustNumber,
   sortProductByCategory,
   getProductWithBetterNutrients,
-  sortProductByNutrientLevel,
   setAverageCategoryNutrientLevel,
   getAverageCategoryNutrientLevel,
   getAllCategoryNutrientLevel,

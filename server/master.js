@@ -1,55 +1,8 @@
 const helper = require('./util/helpers.js');
 const cluster = require('cluster');
 const redis = require('redis');
-const fetch = require('isomorphic-fetch');
 const client = redis.createClient();
 const workers = {};
-let lastChecked;
-const checkMasterDB = () => {
-  console.log('fetching the data from Master DB');
-  // fetch all the newly added products & nutrients from 1 hour ago til now
-  if (!lastChecked) {
-    const timezoneOffset = (new Date()).getTimezoneOffset() * 60000;
-    const time = new Date(Date.now() - timezoneOffset);
-    time.setSeconds(time.getSeconds() - 1.2);
-    timeStamp = time.toISOString()
-      .slice(0, 19)
-      .replace('T', ' ');
-  } else {
-    timeStamp = lastChecked;
-  }
-  const url = `http://localhost:4570/db/productsByDate?date="${timeStamp}"`;
-  fetch(url, {
-    method: 'get',
-  })
-  .then((res) => res.json())
-  .then((data) => {
-    if (data) {
-      // loop through the res.body (array)
-      data.forEach((product) => {
-        if (product.product.name) {
-          console.log('Data received from Master DB: ', product.product);
-          lastChecked = product.product.Product_created_at
-            .slice(0, 19)
-            .replace('T', ' ');
-          // temporarily store the information
-          helper.storeProductInfo(product.product.upc, product.product);
-          product.categories.forEach((category, index) => {
-            helper.addToQueue('createMatrix', JSON.stringify({
-              UPC: product.product.upc,
-              category,
-              jobNumber: index,
-              numberOfJobs: product.categories.length - 1,
-            }));
-          });
-        }
-      });
-      // delete cached recommendation
-      helper.removeRecommendations();
-    }
-  })
-  .catch((err) => console.log(err));
-};
 
 const checkHTTPServer = () => {
   if (workers.httpServer === undefined) {
@@ -61,6 +14,20 @@ const checkHTTPServer = () => {
     workers.httpServer.on('exit', () => {
       console.log('http server exited');
       delete workers.httpServer;
+    });
+    workers.httpServer.on('message', (data) => {
+      console.log(`http server to master: ${JSON.stringify(data)} is ready to be added`);
+      // REMOVE CACHE
+      helper.removeRecommendations();
+      // STORE PRODUCT INFO
+      helper.storeProductInfo(data.upc, data);
+      // CREATE MATRIX
+      data.categories.forEach((category) => {
+        helper.addToQueue('createMatrix', JSON.stringify({
+          UPC: data.upc,
+          category,
+        }));
+      });
     });
   }
 };
@@ -82,11 +49,6 @@ const checkMatrixWorker = () => {
   }
 };
 
-const clearCache = () => {
-  console.log('periodically removing cache');
-  helper.removeRecommendations();
-};
-
 const startMaster = () => {
   console.log('master started');
 
@@ -97,12 +59,8 @@ const startMaster = () => {
       checkHTTPServer();
       checkMatrixWorker();
     };
-    clearCache();
-    setInterval(clearCache, 2000);
     loopWorkers();
     setInterval(loopWorkers, 2000);
-    checkMasterDB();
-    setInterval(checkMasterDB, 1000);
   });
 };
 
