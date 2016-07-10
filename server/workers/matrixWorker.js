@@ -12,23 +12,27 @@ const startMatrixWorker = () => {
           console.log('matrixWorker working on: ', data);
           const UPC = JSON.parse(data).UPC;
           const category = JSON.parse(data).category;
-          const jobNumber = JSON.parse(data).jobNumber;
-          const numberOfJobs = JSON.parse(data).numberOfJobs;
+          // const jobNumber = JSON.parse(data).jobNumber;
+          // const numberOfJobs = JSON.parse(data).numberOfJobs;
           // bring the stored product info
           helper.getProductInfo(UPC)
           .then((info) => {
             const ProductInfo = JSON.parse(info);
+            console.log('stored ProductInfo', ProductInfo);
             let lastIndex;
             Object.keys(ProductInfo).forEach((key, i) => {
               if (key !== 'upc' && key !== 'image' && key !== 'brand' && key !== 'name'
-                && key !== 'Product_created_at' && ProductInfo[key] !== null) {
+                && key !== 'categories' && key !== 'tags' && key !== 'ingredients'
+                && ProductInfo[key] !== null) {
                 lastIndex = i;
               }
             });
             // for each nutrient in the product
             Object.keys(ProductInfo).forEach((key, i) => {
-              if (key !== 'upc' && key !== 'brand' && key !== 'name' &&
-                key !== 'Product_created_at' && ProductInfo[key] !== null) {
+              console.log(key, i);
+              if (key !== 'upc' && key !== 'image' && key !== 'brand' && key !== 'name'
+                && key !== 'categories' && key !== 'tags' && key !== 'ingredients'
+                && ProductInfo[key] !== null) {
                 const nutrientLevel = helper.adjustNumber(ProductInfo[key]);
                 // 1. create a product rank table sorted by both category and nutrient level
                 // zadd sortByCategory:calcium 0 milk:0100:129428359
@@ -37,14 +41,16 @@ const startMatrixWorker = () => {
                 // 2. create a product rank table sorted by nutrients level only
                 // zadd sortByLevel:calcium 0100 milk:129428359
                 // zrangebyscore -inf +inf
-                helper.sortProductByNutrientLevel(key, nutrientLevel, category, UPC);
+                // helper.sortProductByNutrientLevel(key, nutrientLevel, category, UPC);
                 // 3. create a category table with average nutrients level for each category
                 helper.getAverageCategoryNutrientLevel(category, key)
                 .then((categoryInfo) => {
+                  console.log('stored category info: ', categoryInfo);
                   averageNutrientLevel = Number(categoryInfo[0]);
                   numberOfProducts = Number(categoryInfo[1]);
                   // if category already exists
                   if (averageNutrientLevel) {
+                    console.log('averageNutrientLevel exists, recalcuating');
                     // calculate average nutrient level with the new product nutrient information
                     const newNumberOfProducts = numberOfProducts + 1;
                     const newAverageNutrientLevel =
@@ -56,15 +62,16 @@ const startMatrixWorker = () => {
                     // after looping through every nutrient in the product
                     if (i === lastIndex) {
                       // check if the entire job is done for this UPC
-                      if (jobNumber === numberOfJobs) {
-                        // remove product info to save the space
-                        helper.removeProductInfo(UPC);
-                      }
+                      // if (jobNumber === numberOfJobs) {
+                      //   // remove product info to save the space
+                      //   helper.removeProductInfo(UPC);
+                      // }
                       // notify master that the job is done
                       process.send({ UPC, category });
                       loopMatrixWorker();
                     }
                   } else {
+                    console.log('adding brand new category info');
                     // set the product nutrient information as the category's average
                     helper.setAverageCategoryNutrientLevel(
                       category, key, Number(nutrientLevel), 1
@@ -72,10 +79,10 @@ const startMatrixWorker = () => {
                     // after looping through every nutrient in the product
                     if (i === lastIndex) {
                       // check if the entire job is done for this UPC
-                      if (jobNumber === numberOfJobs) {
-                        // remove product information
-                        helper.removeProductInfo(UPC);
-                      }
+                      // if (jobNumber === numberOfJobs) {
+                      //   // remove product information
+                      //   helper.removeProductInfo(UPC);
+                      // }
                       // notify master that the job is done
                       process.send({ UPC, category });
                       loopMatrixWorker();

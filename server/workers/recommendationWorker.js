@@ -1,6 +1,5 @@
 const helper = require('../util/helpers.js');
 const Promise = require('bluebird');
-const fetch = require('isomorphic-fetch');
 
 const getRecommendation = (UPC, callback) => {
   const categoryFunctions = [];
@@ -13,29 +12,18 @@ const getRecommendation = (UPC, callback) => {
 
   console.log('recommendation worker working on: ', UPC);
 
-  const url = `http://localhost:4570/db/product?upc=${UPC}`;
-  fetch(url, {
-    method: 'get',
-  })
-  .then((res) => res.json())
-  .catch(() => callback('No data for the requested product'))
+  helper.getProductInfo(UPC)
   .then((data) => {
-    if (!data.product || Object.keys(data.product).length === 0 || data.categories.length === 0) {
-      callback('No data for the requested product');
-    }
-    const productInfo = data.product;
-    const image = data.media[0].url;
-    Object.keys(productInfo).forEach((key) => {
-      if (key === 'Product_created_at' || productInfo[key] === null) {
-        delete productInfo[key];
-      }
-    });
+    const productInfo = JSON.parse(data);
+    console.log(productInfo, typeof productInfo);
+    const image = productInfo.image;
     recommendation.basicInfo = productInfo;
     recommendation.basicInfo.image = image;
 
     // loop through each category of UPC
-    const categories = data.categories;
+    const categories = productInfo.categories;
     categories.forEach((category) => {
+      console.log(category);
       recommendation[`${category}`] = {};
       // get average nutrient level for each category
       categoryFunctions.push(helper.getAllCategoryNutrientLevel(category));
@@ -44,38 +32,42 @@ const getRecommendation = (UPC, callback) => {
     Promise.all(categoryFunctions)
       .then((categoryDataArray) => {
         categoryDataArray.forEach((categoryData, categoryDataIndex) => {
+          console.log('CATEGORY NU INFORMATION: ', categoryData, typeof categoryData);
           const category = categoryFunctionsIndex[categoryDataIndex];
           // compare nutrient level if it exists in both category and product
           if (categoryData) {
             Object.keys(categoryData).forEach((categoryField) => {
+              console.log(categoryField);
               if (productInfo[categoryField]) {
                 const DV = helper.checkDV(categoryField);
                 // check if nutrient is good or bad nutrient
                 const nutrientQuality = helper.checkIfBadOrGoodNutrient(categoryField);
+                console.log(nutrientQuality);
                 if (nutrientQuality) {
                   // store the comparison anaylsis in recommendation object
                   recommendation[`${category}`][`${nutrientQuality}Nutrients`] =
                   recommendation[`${category}`][`${nutrientQuality}Nutrients`] || {};
                   recommendation[`${category}`][`${nutrientQuality}Nutrients`][categoryField] = {
                     DV,
-                    ratio: productInfo[categoryField] / Number(categoryData[categoryField]),
+                    ratio: Math.ceil(productInfo[categoryField]) / Number(categoryData[categoryField]),
                     product: productInfo[categoryField],
                     category: Number(categoryData[categoryField]),
                   };
                   const checkIfWorseThanAverage = (quality) => {
                     let result;
                     if (quality === 'Good') {
-                      if ((productInfo[categoryField] / Number(categoryData[categoryField])) < 1) {
+                      if ((Math.ceil(productInfo[categoryField]) / Number(categoryData[categoryField])) < 1) {
                         result = true;
                       }
                     } else {
-                      if ((productInfo[categoryField] / Number(categoryData[categoryField])) > 1) {
+                      if ((Math.ceil(productInfo[categoryField]) / Number(categoryData[categoryField])) > 1) {
                         result = true;
                       }
                     }
                     return result;
                   };
                   const worseThanAverage = checkIfWorseThanAverage(nutrientQuality);
+                  console.log('worse than ave?', worseThanAverage, categoryField, productInfo[categoryField], categoryData[categoryField]);
                   if (worseThanAverage) {
                     // get products with better nutrients in the same category from the rank table
                     const nutrientLevel = helper.adjustNumber(categoryData[categoryField]);
@@ -90,7 +82,7 @@ const getRecommendation = (UPC, callback) => {
                   recommendation[`${category}`].nutrientsWithoutRecommendation || {};
                   recommendation[`${category}`].nutrientsWithoutRecommendation[categoryField] = {
                     DV,
-                    ratio: productInfo[categoryField] / Number(categoryData[categoryField]),
+                    ratio: Math.ceil(productInfo[categoryField]) / Number(categoryData[categoryField]),
                     product: productInfo[categoryField],
                     category: Number(categoryData[categoryField]),
                   };
@@ -103,14 +95,14 @@ const getRecommendation = (UPC, callback) => {
         Promise.all(categoryDataFunctions)
           .then((listArray) => {
             listArray.forEach((list, listIndex) => {
+              console.log('lIST', list);
               const nutrientQuality = categoryDataFunctionsIndex[listIndex][0];
               const categoryField = categoryDataFunctionsIndex[listIndex][1];
               const category = categoryDataFunctionsIndex[listIndex][2];
               list.forEach((product) => {
+                console.log(product);
                 const recommendedUPC = product.split(':')[2];
-                // request product info for each recommended product from Master DB
-                const url2 = `http://localhost:4570/db/product?upc=${recommendedUPC}`;
-                listFunctions.push(fetch(url2, { method: 'get' }).then((res) => res.json()));
+                listFunctions.push(helper.getProductInfo(recommendedUPC));
                 listFunctionsIndex.push([nutrientQuality, categoryField, category]);
               });
             });
@@ -121,13 +113,7 @@ const getRecommendation = (UPC, callback) => {
                   const nutrientQuality = listFunctionsIndex[recProductIndex][0];
                   const categoryField = listFunctionsIndex[recProductIndex][1];
                   const category = listFunctionsIndex[recProductIndex][2];
-                  const recommendedProductInfo = recProduct.product;
-                  recommendedProductInfo.image = recProduct.media[0].url;
-                  Object.keys(recommendedProductInfo).forEach((key) => {
-                    if (key === 'Product_created_at' || productInfo[key] === null) {
-                      delete recommendedProductInfo[key];
-                    }
-                  });
+                  const recommendedProductInfo = JSON.parse(recProduct);
                   // store the recommended products info in recommendation object
                   recommendation[`${category}`][`${nutrientQuality}Nutrients`]
                   [categoryField].recommendedProducts =
