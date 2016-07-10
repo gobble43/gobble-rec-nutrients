@@ -14,6 +14,10 @@ const getRecommendation = (UPC, callback) => {
 
   helper.getProductInfo(UPC)
   .then((data) => {
+    if (!data) {
+      callback('No data for the requested product', null);
+      return;
+    }
     const productInfo = JSON.parse(data);
     console.log(productInfo, typeof productInfo);
     const image = productInfo.image;
