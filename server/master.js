@@ -1,7 +1,6 @@
-const helper = require('./util/helpers.js');
+let helper;
 const cluster = require('cluster');
-const redis = require('redis');
-const client = redis.createClient();
+let client;
 const workers = {};
 
 const checkHTTPServer = () => {
@@ -16,18 +15,20 @@ const checkHTTPServer = () => {
       delete workers.httpServer;
     });
     workers.httpServer.on('message', (data) => {
-      console.log(`http server to master: ${JSON.stringify(data)} is ready to be added`);
-      // REMOVE CACHE
-      helper.removeRecommendations();
-      // STORE PRODUCT INFO
-      helper.storeProductInfo(data.upc, data);
-      // CREATE MATRIX
-      data.categories.forEach((category) => {
-        helper.addToQueue('createMatrix', JSON.stringify({
-          UPC: data.upc,
-          category,
-        }));
-      });
+      if (data.upc) {
+        console.log(`http server to master: ${JSON.stringify(data)} is ready to be added`);
+        // REMOVE CACHE
+        helper.removeRecommendations();
+        // STORE PRODUCT INFO
+        helper.storeProductInfo(data.upc, data);
+        // CREATE MATRIX
+        data.categories.forEach((category) => {
+          helper.addToQueue('createMatrix', JSON.stringify({
+            UPC: data.upc,
+            category,
+          }));
+        });
+      }
     });
   }
 };
@@ -44,16 +45,20 @@ const checkMatrixWorker = () => {
       delete workers.matrixWorker;
     });
     workers.matrixWorker.on('message', (data) => {
-      console.log(`matrix worker to master: matrix for ${JSON.stringify(data)} is created`);
+      if (data.UPC) {
+        console.log(`matrix worker to master: matrix for ${JSON.stringify(data)} is created`);
+      }
     });
   }
 };
 
 const startMaster = () => {
   console.log('master started');
-
+  const redis = require('redis');
+  client = redis.createClient();
   client.on('connect', () => {
     console.log('connected to redis');
+    helper = require('./util/helpers.js');
 
     const loopWorkers = () => {
       checkHTTPServer();

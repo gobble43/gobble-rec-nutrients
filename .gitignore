@@ -4,6 +4,7 @@
 # DEV
 ._*
 node_modules/
+dump.rdb
+
 env/development.env
 env/production.env
-dump.rdb

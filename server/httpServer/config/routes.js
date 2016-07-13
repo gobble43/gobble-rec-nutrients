@@ -8,14 +8,15 @@ module.exports = (app) => {
     res.status(201).end();
   });
   app.post('/api/getRecommendation', (req, res) => {
-    let firstLetter;
-    for (let i = 0; i < req.body.upc.length; i++) {
-      if (Number(req.body.upc[i]) !== 0) {
-        firstLetter = i;
-        break;
-      }
-    }
-    const upc = req.body.upc.substring(firstLetter, req.body.upc.length);
+    // let firstLetter;
+    // for (let i = 0; i < req.body.upc.length; i++) {
+    //   if (Number(req.body.upc[i]) !== 0) {
+    //     firstLetter = i;
+    //     break;
+    //   }
+    // }
+    // const upc = req.body.upc.substring(firstLetter, req.body.upc.length);
+    const upc = req.body.upc;
     console.log('httpServer recieved a task, getRecommendation: ', upc);
     helper.getRecommendation(upc)
     .then((cache) => {
